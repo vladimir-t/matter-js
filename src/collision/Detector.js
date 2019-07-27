@@ -14,7 +14,7 @@ var SAT = require('./SAT');
 var Pair = require('./Pair');
 var Bounds = require('../geometry/Bounds');
 
-(function() {
+(function () {
 
     /**
      * Finds all collisions given a list of pairs.
@@ -23,21 +23,33 @@ var Bounds = require('../geometry/Bounds');
      * @param {engine} engine
      * @return {array} collisions
      */
-    Detector.collisions = function(broadphasePairs, engine) {
+    Detector.collisions = function (broadphasePairs, engine) {
         var collisions = [],
             pairsTable = engine.pairs.table;
 
         // @if DEBUG
         var metrics = engine.metrics;
         // @endif
-        
+
         for (var i = 0; i < broadphasePairs.length; i++) {
-            var bodyA = broadphasePairs[i][0], 
+            var bodyA = broadphasePairs[i][0],
                 bodyB = broadphasePairs[i][1];
 
             if ((bodyA.isStatic || bodyA.isSleeping) && (bodyB.isStatic || bodyB.isSleeping))
                 continue;
-            
+
+            if (bodyA.canCollide) {
+                if (!bodyA.canCollide(bodyA, bodyB)) {
+                    continue;
+                }
+            }
+
+            if (bodyB.canCollide) {
+                if (!bodyB.canCollide(bodyA, bodyB)) {
+                    continue;
+                }
+            }
+
             if (!Detector.canCollide(bodyA.collisionFilter, bodyB.collisionFilter))
                 continue;
 
@@ -97,7 +109,7 @@ var Bounds = require('../geometry/Bounds');
      * @param {} filterB
      * @return {bool} `true` if collision can occur
      */
-    Detector.canCollide = function(filterA, filterB) {
+    Detector.canCollide = function (filterA, filterB) {
         if (filterA.group === filterB.group && filterA.group !== 0)
             return filterA.group > 0;
 
